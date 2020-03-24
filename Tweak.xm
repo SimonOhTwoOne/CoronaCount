@@ -17,6 +17,8 @@ UIColor *statuscolor;
 @property (nonatomic, retain) NSString *deaths;
 @property (nonatomic, strong) UILabel *label;
 
+- (void) ccTapRecognizerEvent;
+
 - (void) updateCoronaValues;
 @end
 
@@ -26,6 +28,7 @@ NSNumber *deaths;
 NSNumber *currentNumber;
 
 int type;
+int lastType;
 
 static bool customcountry;
 static bool enabled;
@@ -44,7 +47,11 @@ static bool enabled;
     object:nil];
   [[NSNotificationCenter defaultCenter] addObserver:self
     selector:@selector(updatecolor:) 
-    name:@"ccChangecolor"
+    name:@"ccChangeColor"
+    object:nil];
+  [[NSNotificationCenter defaultCenter] addObserver:self
+    selector:@selector(setLoading:) 
+    name:@"ccSetLoading"
     object:nil];
 
   type = [[[NSUserDefaults alloc] initWithSuiteName:@"com.megadev.coronacount"] integerForKey:@"type"];
@@ -58,43 +65,24 @@ static bool enabled;
   [self updateCoronaValues];
 
   NSNumberFormatter *formatter = [NSNumberFormatter new];
-  [formatter setNumberStyle:NSNumberFormatterDecimalStyle]; 
-
-  NSString *outputString = @"";
-
-  switch(type) {
-    case 0:
-      outputString = [NSString stringWithFormat:@"%@ %@", [formatter stringFromNumber:cases], @"cases"];
-      break;
-
-    case 1:
-      outputString = [NSString stringWithFormat:@"%@ %@", [formatter stringFromNumber:deaths], @"deaths"];
-      break;
-
-    case 2:
-      outputString = [NSString stringWithFormat:@"%@ %@", [formatter stringFromNumber:recovered], @"cured"];
-      break;
-
-    default:
-      break;
-  }
+  [formatter setNumberStyle:NSNumberFormatterDecimalStyle];
 
   dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
     CGRect coronaframe;
     CGFloat screenBounds = [UIScreen mainScreen].bounds.size.height;
     
     // X, XS, 11 Pro
-    if(screenBounds == 812 ){
+    if(screenBounds == 812){
       coronaframe =  CGRectMake([UIScreen mainScreen].bounds.size.width - 95 , 26, 90, 20);
     }
 
     // 11 Pro Max and XS Max
-    if(screenBounds > 812 ){
+    if(screenBounds > 812){
       coronaframe = CGRectMake([UIScreen mainScreen].bounds.size.width - 106 , 26, 90, 20);
     }
 
     // 8, 7 and 6  
-    if(screenBounds < 812 ){
+    if(screenBounds < 812){
       if(screenBounds > 700){
         coronaframe = CGRectMake([UIScreen mainScreen].bounds.size.width - 90 , 12, 90, 20);
       }else{
@@ -109,11 +97,10 @@ static bool enabled;
     label.textColor = statuscolor;
     label.numberOfLines = 0;
     label.lineBreakMode = NSLineBreakByWordWrapping;
+    label.text = [NSString stringWithFormat:@"Loading"];
 
-    // If current values are nil then don't set label.
-    if(![outputString hasPrefix:@"("]){
-        label.text = [NSString stringWithFormat:@"%@", outputString];
-    }
+    [label setUserInteractionEnabled:YES];
+    [label addGestureRecognizer:[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(ccTapRecognizerEvent)]];
 
     [self addSubview:label];
     self.label = label;
@@ -162,17 +149,23 @@ static bool enabled;
 
     if(![outputString hasPrefix:@"("]){
       dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        if (currentValue > currentNumber) {
-          currentNumber = currentValue;
-          [UIView animateWithDuration:1.0 delay:0.2 options:0 animations:^{
-            self.label.textColor = [UIColor redColor];
-          } completion:^(BOOL finished) {
+        if (currentValue > currentNumber || type != lastType) {
+          if(type != lastType){
             self.label.text = [NSString stringWithFormat:@"%@", outputString];
-          }];
+          } else {
+            [UIView animateWithDuration:1.0 delay:0.2 options:0 animations:^{
+              self.label.textColor = [UIColor redColor];
+            } completion:^(BOOL finished) {
+              self.label.text = [NSString stringWithFormat:@"%@", outputString];
+            }];
+          }
 
           dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
             self.label.textColor = statuscolor;
           });
+
+          lastType = true;
+          currentNumber = currentValue;
         }
       });
     }
@@ -185,16 +178,20 @@ static bool enabled;
 }
 
 %new
-- (void)updateCoronaValues {
-  type = [[[NSUserDefaults alloc] initWithSuiteName:@"com.megadev.coronacount"] integerForKey:@"type"];
+- (void)setLoading:(NSNotification *) notification{
+  self.label.text = @"Loading";
+}
 
+%new
+- (void)updateCoronaValues {
+  
   NSURL *URL;
 
-  if(!country){
-    URL = [NSURL URLWithString:@"https://corona.lmao.ninja/all"];
-  }else{
+  if(customcountry){
     NSString *comburl = [NSString stringWithFormat:@"https://corona.lmao.ninja/countries/%@", [country stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
     URL = [NSURL URLWithString:[comburl lowercaseString]];
+  }else{
+    URL = [NSURL URLWithString:@"https://corona.lmao.ninja/all"];
   }
   
   NSURLRequest *request = [NSURLRequest requestWithURL:URL];
@@ -228,6 +225,19 @@ static bool enabled;
   }];
 }
 
+%new
+-(void) ccTapRecognizerEvent {
+  type = (type + 1) % 3;
+
+  [[NSNotificationCenter defaultCenter] 
+    postNotificationName:@"ccSetLoading" 
+    object:self];
+
+  [[NSNotificationCenter defaultCenter] 
+    postNotificationName:@"ccTrigger" 
+    object:self];
+}
+
 %end
 
 %hook _UIStatusBar 
@@ -237,7 +247,7 @@ static bool enabled;
 
   statuscolor =  MSHookIvar<UIColor *>(self, "_foregroundColor");
   [[NSNotificationCenter defaultCenter] 
-    postNotificationName:@"ccChangecolor" 
+    postNotificationName:@"ccChangeColor" 
     object:self];
 }
 

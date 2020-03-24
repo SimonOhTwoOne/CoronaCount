@@ -49,20 +49,6 @@
 		</dict>
 		<dict>
 			<key>cell</key>
-			<string>PSSwitchCell</string>
-			<key>default</key>
-			<true/>
-			<key>defaults</key>
-			<string>com.megadev.coronacount</string>
-			<key>key</key>
-			<string>tap2toggle</string>
-			<key>label</key>
-			<string>Tap to toggle</string>
-			<key>PostNotification</key>
-			<string>com.megadev.Coronapref/ReloadPrefs</string>
-		</dict>
-		<dict>
-			<key>cell</key>
 			<string>PSSegmentCell</string>
 			<key>defaults</key>
 			<string>com.megadev.coronacount</string>
