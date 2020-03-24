@@ -1,9 +1,9 @@
 Package: com.megadev.coronacounter
 Name: CoronaCount
 Depends: mobilesubstrate, ws.hbang.common (>= 1.11)
-Version: 1
+Version: 1.1
 Architecture: iphoneos-arm
-Description: Shows Corona cases in statusbar
-Maintainer: MegaDev
-Author: MegaDev
+Description: Shows COVID-19 cases in statusbar.
+Maintainer: MegaDev & Simon021
+Author: MegaDev & Simon021
 Section: Tweaks

@@ -4,11 +4,6 @@
 <dict>
 	<key>items</key>
 	<array>
-
-
-
-
-
 		<dict>
 			<key>cellClass</key>
 			<string>HBTwitterCell</string>
@@ -17,15 +12,20 @@
 			<key>user</key>
 			<string>omegaluldev</string>
 		</dict>
-
-
-	<dict>
+		<dict>
+			<key>cellClass</key>
+			<string>HBTwitterCell</string>
+			<key>label</key>
+			<string>Simon021</string>
+			<key>user</key>
+			<string>SimonOhTwoOne</string>
+		</dict>
+		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
 			<string>Toggle</string>
 		</dict>
-
 		<dict>
 			<key>cell</key>
 			<string>PSSwitchCell</string>
@@ -40,12 +40,26 @@
 			<key>PostNotification</key>
 			<string>com.megadev.Coronapref/ReloadPrefs</string>
 		</dict>
-
-			<dict>
+		
+		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
 			<string>Counter</string>
+		</dict>
+		<dict>
+			<key>cell</key>
+			<string>PSSwitchCell</string>
+			<key>default</key>
+			<true/>
+			<key>defaults</key>
+			<string>com.megadev.coronacount</string>
+			<key>key</key>
+			<string>tap2toggle</string>
+			<key>label</key>
+			<string>Tap to toggle</string>
+			<key>PostNotification</key>
+			<string>com.megadev.Coronapref/ReloadPrefs</string>
 		</dict>
 		<dict>
 			<key>cell</key>
@@ -58,28 +72,26 @@
 			<array>
 				<string>Cases</string>
 				<string>Deaths</string>
-        <string>Recovered</string>
-			
+        		<string>Recovered</string>
 			</array>
 			<key>validValues</key>
 			<array>
-				  <integer>0</integer>
+				<integer>0</integer>
 				<integer>1</integer>
-  <integer>2</integer>
-
+				<integer>2</integer>
 			</array>
 			<key>default</key>
 			<integer>0</integer>
 			<key>PostNotification</key>
             <string>com.megadev.coronacount-prefsreload</string>
 		</dict>
-	<dict>
+
+		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
 			<string>Toggle (Press 'Return' to apply')</string>
 		</dict>
-
 		<dict>
 			<key>cell</key>
 			<string>PSSwitchCell</string>
@@ -94,9 +106,7 @@
 			<key>PostNotification</key>
 			<string>com.megadev.Coronapref/ReloadPrefs</string>
 		</dict>
-
-
-			<dict>
+		<dict>
 			<key>cell</key>
 			<string>PSEditTextCell</string>
 			<key>cellClass</key>
@@ -108,59 +118,55 @@
 			<key>label</key>
 			<string>Type a country</string>
 			<key>placeholder</key>
-			<string>USA,France,etc</string>
+			<string>USA, France, etc</string>
 			<key>PostNotification</key>
 			<string>com.megadev.Coronapref/ReloadPrefs</string>
 		</dict>
 
-	<dict>
+		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
 			<string>Huge thanks EliteDaMyth for allowing me to use his APi Links below!</string>
 		</dict>
-<dict>
-    <key>cellClass</key>
-    <string>HBLinkTableCell</string>
-    <key>icon</key>
-    <string>github.png</string>
-    <key>label</key>
-    <string>Github Source Code (API)</string>
-    <key>url</key>
-    <string>https://github.com/NovelCOVID/API</string>
-</dict>
+		<dict>
+			<key>cellClass</key>
+			<string>HBLinkTableCell</string>
+			<key>icon</key>
+			<string>github.png</string>
+			<key>label</key>
+			<string>Github Source Code (API)</string>
+			<key>url</key>
+			<string>https://github.com/NovelCOVID/API</string>
+		</dict>
+		<dict>
+			<key>cellClass</key>
+			<string>HBLinkTableCell</string>
+			<key>icon</key>
+			<string>discord.png</string>
+			<key>label</key>
+			<string>Discord Bot</string>
+			<key>url</key>
+			<string>https://corona.lmao.ninja/invite</string>
+		</dict>
 
 
-<dict>
-    <key>cellClass</key>
-    <string>HBLinkTableCell</string>
-    <key>icon</key>
-    <string>discord.png</string>
-    <key>label</key>
-    <string>Discord Bot</string>
-    <key>url</key>
-    <string>https://corona.lmao.ninja/invite</string>
-</dict>
-
-
-			<dict>
+		<dict>
 			<key>cell</key>
 			<string>PSGroupCell</string>
 			<key>label</key>
-			<string>B3rry (Inpired by BerryC8) check it out!</string>
+			<string>MegaDev's Other Tweaks (Check them out!)</string>
 		</dict>
-<dict>
-    <key>cellClass</key>
-    <string>HBPackageTableCell</string>
-    <key>label</key>
-    <string>B3rry</string>
-    <key>packageIdentifier</key>
-    <string>com.megadev.b3rry</string>
-
-</dict>
-
+		<dict>
+			<key>cellClass</key>
+			<string>HBPackageTableCell</string>
+			<key>label</key>
+			<string>B3rry (Inspired by BerryC8)</string>
+			<key>packageIdentifier</key>
+			<string>com.megadev.b3rry</string>
+		</dict>
 	</array>
 	<key>title</key>
-	<string>Corona</string>
-</dict>
+	<string>Corona Count</string>
+	</dict>
 </plist>

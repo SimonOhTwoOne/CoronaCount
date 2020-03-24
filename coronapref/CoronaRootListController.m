@@ -39,7 +39,7 @@
 
 @end
 
-@interface megacorona : PSEditableTableCell
+@interface megacorona : PSEditableTableCell <UITextFieldDelegate>
 @end
 
 @implementation megacorona
@@ -54,7 +54,7 @@
 }
 
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {
-	if (textField.text == self.text) {
+	if (textField.text == self.value) {
 		[textField resignFirstResponder];
 		return NO;
 	}
