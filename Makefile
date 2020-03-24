@@ -1,15 +1,8 @@
 INSTALL_TARGET_PROCESSES = SpringBoard
 ARCHS = arm64 arm64e
-
 VALID_ARCHS = arm64 arm64e
 
-
-export THEOS_DEVICE_PORT=22
- export THEOS_DEVICE_IP=192.168.1.63
-
-
-
-
+SYSROOT=$(THEOS)/sdks/iPhoneOS13.0.sdk
 
 include $(THEOS)/makefiles/common.mk
 

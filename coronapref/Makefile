@@ -1,9 +1,7 @@
 include $(THEOS)/makefiles/common.mk
 
-
 ARCHS = arm64 arm64e
-
-TARGET = iphone:clang:13.2:13.2
+SYSROOT=$(THEOS)/sdks/iPhoneOS13.0.sdk
 
 BUNDLE_NAME = coronapref
 coronapref_FILES = CoronaRootListController.m HBAppearanceSettings.m
