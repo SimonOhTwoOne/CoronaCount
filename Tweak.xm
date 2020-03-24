@@ -1,4 +1,3 @@
-/// Global Setup & Inludes
 #import <WebKit/WebKit.h>
 #import "QuartzCore/QuartzCore.h"
 #import <UIKit/UIKit.h>
@@ -14,190 +13,113 @@ UIColor *statuscolor;
 
 @interface UIStatusBarWindow : UIWindow
 @property (nonatomic, retain) NSString *cases;
-@property(nonatomic, strong) UILabel *label;
+@property (nonatomic, retain) NSString *recovered;
+@property (nonatomic, retain) NSString *deaths;
+@property (nonatomic, strong) UILabel *label;
+
+- (void) updateCoronaValues;
 @end
 
 NSNumber *cases;
-NSNumber *startcases;
-NSString *type;
+NSNumber *recovered;
+NSNumber *deaths;
+NSNumber *currentNumber;
+
+int type;
+
 static bool customcountry;
 static bool enabled;
 
-////Begin tweak
 %group corona
 
-//// Probably should not have hook the window but yea :/ 
 %hook UIStatusBarWindow
 %property(nonatomic, strong) UILabel *label;
 
 -(void)setStatusBar:(id)arg1{
   %orig;
 
-  ///Define NSNotification
   [[NSNotificationCenter defaultCenter] addObserver:self
     selector:@selector(refresh:) 
-    name:@"trigger"
+    name:@"ccTrigger"
     object:nil];
   [[NSNotificationCenter defaultCenter] addObserver:self
     selector:@selector(updatecolor:) 
-    name:@"changecolor"
+    name:@"ccChangecolor"
     object:nil];
 
-  NSUserDefaults *prefs = [[NSUserDefaults alloc] initWithSuiteName:@"com.megadev.coronacount"];
+  type = [[[NSUserDefaults alloc] initWithSuiteName:@"com.megadev.coronacount"] integerForKey:@"type"];
 
-  ////Detect prefs
-  if ([prefs integerForKey:@"type"] == 0) {
-    type = @" Cases";
-  }
-
-  if ([prefs integerForKey:@"type"] == 1) {
-    type = @" Deaths";
-  }
-
-  if ([prefs integerForKey:@"type"] == 2) {
-    type = @" Cured";
-  }
-
-  ///// Detect devicz orientation so counter hides when watching a video
   [[UIDevice currentDevice] beginGeneratingDeviceOrientationNotifications];
   [[NSNotificationCenter defaultCenter]
     addObserver:self selector:@selector(orientationChanged:)
     name:UIDeviceOrientationDidChangeNotification
     object:[UIDevice currentDevice]];
 
-  NSURL *targetURL;
+  [self updateCoronaValues];
 
-  if(!customcountry){
-    targetURL = [NSURL URLWithString:@"https://corona.lmao.ninja/all"];
-  }else{
-    NSString *nospacecountry = [country stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]; /// Replace spaces with %20 for url encoding
-    NSString *comburl = [NSString stringWithFormat:@"https://corona.lmao.ninja/countries/%@", nospacecountry];
+  NSNumberFormatter *formatter = [NSNumberFormatter new];
+  [formatter setNumberStyle:NSNumberFormatterDecimalStyle]; 
 
-    NSString *stonks = [comburl lowercaseString]; // Api doesnt accept uppercase letters
-    targetURL = [NSURL URLWithString:stonks];
+  NSString *outputString = @"";
+
+  switch(type) {
+    case 0:
+      outputString = [NSString stringWithFormat:@"%@ %@", [formatter stringFromNumber:cases], @"cases"];
+      break;
+
+    case 1:
+      outputString = [NSString stringWithFormat:@"%@ %@", [formatter stringFromNumber:deaths], @"deaths"];
+      break;
+
+    case 2:
+      outputString = [NSString stringWithFormat:@"%@ %@", [formatter stringFromNumber:recovered], @"cured"];
+      break;
+
+    default:
+      break;
   }
 
-  NSURLRequest *request = [NSURLRequest requestWithURL:targetURL];
-  [NSURLConnection sendAsynchronousRequest: request
-    queue: [NSOperationQueue mainQueue]
-    completionHandler: ^(NSURLResponse *urlResponse, NSData *responseData, NSError *requestError) {
-    // Check for Errors
-    if (requestError || !responseData) {
-      dispatch_async(dispatch_get_main_queue(), ^{
-
-      });
-    } else {
-      // jump back to the main thread to update the UI
-      dispatch_async(dispatch_get_main_queue(), ^{
-        NSDictionary *s = [NSJSONSerialization JSONObjectWithData:responseData options:0 error:NULL];
-
-        NSString *validation = [[NSString alloc] initWithData:responseData encoding:NSUTF8StringEncoding];
-
-
-        if([validation containsString:@"found"]){
-          ///Check if api returned error 
-          UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Country Not found!"
-            message:[NSString stringWithFormat:@"Country not found: %@", country]
-            delegate:self
-            cancelButtonTitle:@"OK"
-            otherButtonTitles:nil];
-          [alert show];
-        }
-
-        /// Try to fetch cases
-        if ([prefs integerForKey:@"type"] == 0) {
-          @try {
-          startcases =[s objectForKey:@"cases"];
-
-          }
-
-          @catch (NSException *exception) {
-            UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Country Not found!"
-              message:[NSString stringWithFormat:@"Country not found: %@", country]
-              delegate:self
-              cancelButtonTitle:@"OK"
-              otherButtonTitles:nil];
-            [alert show];
-          }
-        }
-
-        if ([prefs integerForKey:@"type"] == 1) {
-          @try {
-            startcases =[s objectForKey:@"deaths"];
-          }
-
-          @catch (NSException *exception) {
-            UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Country Not found!"
-              message:[NSString stringWithFormat:@"Country not found: %@", country]
-              delegate:self
-              cancelButtonTitle:@"OK"
-              otherButtonTitles:nil];
-            [alert show];
-          }
-        }
-
-        if ([prefs integerForKey:@"type"] == 2) {
-          @try {
-            startcases =[s objectForKey:@"recovered"];
-          }
-
-          @catch (NSException *exception) {
-            UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Country Not found!"
-              message:[NSString stringWithFormat:@"Country not found: %@", country]
-              delegate:self
-              cancelButtonTitle:@"OK"
-              otherButtonTitles:nil];
-            [alert show];
-          }
-        }
-
-        NSNumberFormatter *formatter = [NSNumberFormatter new];
-        [formatter setNumberStyle:NSNumberFormatterDecimalStyle]; 
-
-        NSString *myString = [formatter stringFromNumber:startcases];
-
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-          if(startcases.intValue > 0){
-            CGRect coronaframe;
-            CGFloat screenBounds = [UIScreen mainScreen].bounds.size.height;
-            
-            /// x , xs , pro
-            if(screenBounds == 812 ){
-              coronaframe =  CGRectMake([UIScreen mainScreen].bounds.size.width - 95 , 26, 90, 20);
-            }
-
-            /// pro max , xs max
-            if(screenBounds > 812 ){
-              coronaframe = CGRectMake([UIScreen mainScreen].bounds.size.width - 106 , 26, 90, 20);
-            }
-
-            /// 8   ,  7  , 6  
-            if(screenBounds < 812 ){
-              if(screenBounds > 700){
-                coronaframe = CGRectMake([UIScreen mainScreen].bounds.size.width - 90 , 12, 90, 20);
-              }else{
-                coronaframe =  CGRectMake([UIScreen mainScreen].bounds.size.width - 85 , 10, 90, 20);
-              }
-            }
-
-            UILabel *label = [[UILabel alloc] initWithFrame:coronaframe];
-            label.backgroundColor = [UIColor clearColor];
-            label.textAlignment = NSTextAlignmentCenter;
-            [label setFont:[UIFont systemFontOfSize:10]];
-            label.textColor = statuscolor;
-            label.numberOfLines = 0;
-            label.lineBreakMode = NSLineBreakByWordWrapping;
-            label.text = [NSString stringWithFormat:@"%@%@", myString, type];
-
-            [self addSubview:label];
-            self.label = label;
-          }
-        });
-      });
+  dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+    CGRect coronaframe;
+    CGFloat screenBounds = [UIScreen mainScreen].bounds.size.height;
+    
+    // X, XS, 11 Pro
+    if(screenBounds == 812 ){
+      coronaframe =  CGRectMake([UIScreen mainScreen].bounds.size.width - 95 , 26, 90, 20);
     }
-  }];
 
+    // 11 Pro Max and XS Max
+    if(screenBounds > 812 ){
+      coronaframe = CGRectMake([UIScreen mainScreen].bounds.size.width - 106 , 26, 90, 20);
+    }
+
+    // 8, 7 and 6  
+    if(screenBounds < 812 ){
+      if(screenBounds > 700){
+        coronaframe = CGRectMake([UIScreen mainScreen].bounds.size.width - 90 , 12, 90, 20);
+      }else{
+        coronaframe =  CGRectMake([UIScreen mainScreen].bounds.size.width - 85 , 10, 90, 20);
+      }
+    }
+
+    UILabel *label = [[UILabel alloc] initWithFrame:coronaframe];
+    label.backgroundColor = [UIColor clearColor];
+    label.textAlignment = NSTextAlignmentCenter;
+    [label setFont:[UIFont systemFontOfSize:10]];
+    label.textColor = statuscolor;
+    label.numberOfLines = 0;
+    label.lineBreakMode = NSLineBreakByWordWrapping;
+
+    // If current values are nil then don't set label.
+    if(![outputString hasPrefix:@"("]){
+        label.text = [NSString stringWithFormat:@"%@", outputString];
+    }
+
+    [self addSubview:label];
+    self.label = label;
+  });
 }
+
 %new
 - (void) orientationChanged:(NSNotification *)note {
   if (UIDeviceOrientationIsLandscape([UIDevice currentDevice].orientation)){
@@ -207,85 +129,54 @@ static bool enabled;
   }
 }
 
-
-//// Fetch info
 %new
 - (void) refresh:(NSNotification *) notification{
-  NSURL *targetURL;
 
-  if(!customcountry){
-    targetURL = [NSURL URLWithString:@"https://corona.lmao.ninja/all"];
-  }else{
-    NSString *nospacecountry = [country stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding];
-    NSString *comburl = [NSString stringWithFormat:@"https://corona.lmao.ninja/countries/%@", nospacecountry];
-    NSString *stonks = [comburl lowercaseString];
-    targetURL = [NSURL URLWithString:stonks];
-    NSLog(@"MEME %@",stonks);
-  }
+  [self updateCoronaValues];
+  if(cases){
+    NSNumberFormatter *formatter = [NSNumberFormatter new];
+    [formatter setNumberStyle:NSNumberFormatterDecimalStyle]; 
 
-  NSURLRequest *request = [NSURLRequest requestWithURL:targetURL];
+    NSString *outputString = @"";
+    NSNumber *currentValue = nil;
 
-  [NSURLConnection sendAsynchronousRequest: request
-    queue: [NSOperationQueue mainQueue]
-    completionHandler: ^(NSURLResponse *urlResponse, NSData *responseData, NSError *requestError) {
-    // Check for Errors
-    if (requestError || !responseData) {
-      // jump back to the main thread to update the UI
-      dispatch_async(dispatch_get_main_queue(), ^{});
-    } else {
-      // jump back to the main thread to update the UI
-      dispatch_async(dispatch_get_main_queue(), ^{
-        NSUserDefaults *prefs = [[NSUserDefaults alloc] initWithSuiteName:@"com.megadev.coronacount"];
-        NSDictionary *s = [NSJSONSerialization JSONObjectWithData:responseData options:0 error:NULL];
+    switch(type) {
+      case 0:
+        currentValue = cases;
+        outputString = [NSString stringWithFormat:@"%@ %@", [formatter stringFromNumber:currentValue], @"cases"];
+        break;
 
-        if ([prefs integerForKey:@"type"] == 0) {
-          @try {
-            cases =[s objectForKey:@"cases"];
-          }
-          @catch (NSException *exception) {}
+      case 1:
+        currentValue = deaths;
+        outputString = [NSString stringWithFormat:@"%@ %@", [formatter stringFromNumber:currentValue], @"deaths"];
+        break;
+
+      case 2:
+        currentValue = recovered;
+        outputString = [NSString stringWithFormat:@"%@ %@", [formatter stringFromNumber:currentValue], @"cured"];
+        break;
+
+      default:
+        break;
+    }
+
+    if(![outputString hasPrefix:@"("]){
+      dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        if (currentValue > currentNumber) {
+          currentNumber = currentValue;
+          [UIView animateWithDuration:1.0 delay:0.2 options:0 animations:^{
+            self.label.textColor = [UIColor redColor];
+          } completion:^(BOOL finished) {
+            self.label.text = [NSString stringWithFormat:@"%@", outputString];
+          }];
+
+          dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+            self.label.textColor = statuscolor;
+          });
         }
-
-        if ([prefs integerForKey:@"type"] == 1) {
-          @try {
-            cases =[s objectForKey:@"deaths"];
-          }
-          @catch (NSException *exception) {}
-        }
-
-        if ([prefs integerForKey:@"type"] == 2) {
-
-          @try {
-            cases =[s objectForKey:@"recovered"];
-          }
-          @catch (NSException *exception) {}
-        }
-
-        NSNumberFormatter *formatter = [NSNumberFormatter new];
-        [formatter setNumberStyle:NSNumberFormatterDecimalStyle]; 
-
-        NSString *myString = [formatter stringFromNumber:cases];
-
-        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-          //// Check wether the number is diffirent from the previois fetch
-          if(cases.intValue > 0){
-            if(startcases.intValue < cases.intValue){
-              startcases = cases;
-
-              [UIView animateWithDuration:1.0 delay:0.2 options:0 animations:^{
-                self.label.textColor = [UIColor redColor];
-              } completion:^(BOOL finished) {
-                self.label.text = [NSString stringWithFormat:@"%@%@", myString, type];
-              }];
-
-              dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-                self.label.textColor = statuscolor;
-              });
-            }
-          }
-        });
       });
     }
-  }];
+  }
 }
 
 %new
@@ -293,9 +184,52 @@ static bool enabled;
   self.label.textColor = statuscolor;
 }
 
+%new
+- (void)updateCoronaValues {
+  type = [[[NSUserDefaults alloc] initWithSuiteName:@"com.megadev.coronacount"] integerForKey:@"type"];
+
+  NSURL *URL;
+
+  if(!country){
+    URL = [NSURL URLWithString:@"https://corona.lmao.ninja/all"];
+  }else{
+    NSString *comburl = [NSString stringWithFormat:@"https://corona.lmao.ninja/countries/%@", [country stringByAddingPercentEscapesUsingEncoding:NSUTF8StringEncoding]];
+    URL = [NSURL URLWithString:[comburl lowercaseString]];
+  }
+  
+  NSURLRequest *request = [NSURLRequest requestWithURL:URL];
+  [NSURLConnection sendAsynchronousRequest: request
+    queue: [NSOperationQueue mainQueue]
+    completionHandler: ^(NSURLResponse *urlResponse, NSData *responseData, NSError *requestError) {
+    if (requestError || !responseData) {
+      UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Connection Error!"
+        message:[NSString stringWithFormat:@"Unable to fetch data for %@. Could not connect to server.", country]
+        delegate:self
+        cancelButtonTitle:@"OK"
+        otherButtonTitles:nil];
+      [alert show];
+    } else {
+      NSDictionary *s = [NSJSONSerialization JSONObjectWithData:responseData options:0 error:NULL];
+
+      @try {
+        cases = [s objectForKey:@"cases"];
+        deaths = [s objectForKey:@"deaths"];
+        recovered = [s objectForKey:@"recovered"];
+      }
+      @catch (NSException *exception) {
+        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Country Not found!"
+          message:[NSString stringWithFormat:@"%@ not found. Reset country and respring to fix! (May be due to connection or API)", country]
+          delegate:self
+          cancelButtonTitle:@"OK"
+          otherButtonTitles:nil];
+        [alert show];
+      }
+    }
+  }];
+}
+
 %end
 
-//// update color
 %hook _UIStatusBar 
 
 -(void)setForegroundColor:(id)arg1{
@@ -303,19 +237,19 @@ static bool enabled;
 
   statuscolor =  MSHookIvar<UIColor *>(self, "_foregroundColor");
   [[NSNotificationCenter defaultCenter] 
-    postNotificationName:@"changecolor" 
+    postNotificationName:@"ccChangecolor" 
     object:self];
 }
 
 %end
 
-//// Time event for fetching the api Reccomeneded by Smokin1337
+// Credits to Smokin1337 for suggesting to hook this event
 %hook SBUIController
 - (void)updateBatteryState:(id)arg1 {
   %orig;
 
   [[NSNotificationCenter defaultCenter] 
-    postNotificationName:@"trigger" 
+    postNotificationName:@"ccTrigger" 
     object:self];
 }
 
